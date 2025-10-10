@@ -101,7 +101,8 @@ def nslaw_fit( hpar: np.ndarray , hcov: np.ndarray , Y: np.ndarray , samples: np
             p  = np.random.choice( xX.size , xX.size , replace = True )
             
             ## Fit
-            ns_hpar = nslaw.fit_mle( xY[p] , xX[p] , init = init )
+            # ns_hpar = nslaw.fit_mle( xY[p] , xX[p] , init = init )
+            ns_hpar = nslaw.fit_mle( xY , xX , init = init )
             
             ## Save
             hpars[ (iper,) + idx0 + (slice(hpar.size,s_hparY,1),) ] = ns_hpar
