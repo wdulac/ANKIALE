@@ -118,7 +118,9 @@ def mean_cov_hpars( hpars: np.ndarray ) -> tuple[np.ndarray,np.ndarray]:
     
     nhpar = hpars.shape[-3]
     hpar  = np.nanmean( hpars , axis = (-2,-1) )
-    hcov  = np.apply_along_axis( lambda x: robust_covariance( x.reshape(nhpar,-1).T ) , 1 , hpars.reshape(-1,np.prod(hpars.shape[-3:])) ).reshape( hpars.shape[:-3] + (nhpar,nhpar) )
+    # hcov  = np.apply_along_axis( lambda x: robust_covariance( x.reshape(nhpar,-1).T ) , 1 , hpars.reshape(-1,np.prod(hpars.shape[-3:])) ).reshape( hpars.shape[:-3] + (nhpar,nhpar) )
+    hcov = np.zeros(hpars.shape[:-3] + (nhpar, nhpar))
+
     
     return hpar,hcov
 ##}}}
