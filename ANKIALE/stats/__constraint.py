@@ -57,7 +57,7 @@ logger.addHandler(logging.NullHandler())
 
 # Instrumentation for MAR2 calls: count and save returned hcov_o matrices to disk
 _MAR2_call_count = 0
-_MAR2_call_dir = None
+_MAR2_call_dir = "/cnrm/amacs/USERS/dulacw/ANETO/tests_ankiale/FAST_FIT_Y_1.1.0_save_MAR2/hcov_o_MAR2_calls"
 _MAR2_call_files: list[str] = []
 
 def _ensure_MAR2_dir() -> str:
