@@ -141,12 +141,6 @@ def infer_hcov_o_MAR2( Ros: Sequence[xr.DataArray] , size: int ) -> np.ndarray:#
         hcov_o[b:e,b:e] = MAR2.fit( Ro ).cov(Ro.size)
         b += Ro.size
     
-    # Record the MAR2 hcov_o for later analysis (best-effort)
-    try:
-        _save_MAR2_call(hcov_o)
-    except Exception as e:
-        logger.warning("Could not record MAR2 hcov_o: %s", e)
-
     return hcov_o
 ##}}}
 
@@ -240,7 +234,14 @@ def constraint_covar( *args: np.ndarray , P: np.ndarray | None = None , timeXo: 
         hcov_u      = infer_hcov_o( hparC , hcovC , Xos , P , method_oerror )
         err.value   = np.linalg.norm( hcov_o - hcov_u ) / np.linalg.norm(hcov_o)
         hcov_o      = hcov_u
-    
+
+    # If the chosen observed-error method is MAR2, save the final converged hcov_o
+    try:
+        if isinstance(method_oerror, str) and method_oerror.upper() == "MAR2":
+            _save_MAR2_call(hcov_o)
+    except Exception as e:
+        logger.warning("Could not save final MAR2 hcov_o after convergence: %s", e)
+
     return hparC,hcovC
 ##}}}
 
