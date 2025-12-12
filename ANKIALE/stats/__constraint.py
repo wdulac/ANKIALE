@@ -30,6 +30,9 @@ import logging
 import numpy as np
 import scipy.stats as sc
 import xarray as xr
+import os
+import json
+from datetime import datetime
 
 from typing import Sequence
 
@@ -50,6 +53,64 @@ from .models.__AbstractModel import AbstractModel
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
+
+
+# Instrumentation for MAR2 calls: count and save returned hcov_o matrices to disk
+_MAR2_call_count = 0
+_MAR2_call_dir = None
+_MAR2_call_files: list[str] = []
+
+def _ensure_MAR2_dir() -> str:
+    """Ensure a directory exists to store MAR2 hcov outputs and return its path."""
+    global _MAR2_call_dir
+    if _MAR2_call_dir is not None:
+        return _MAR2_call_dir
+    ts = datetime.now().strftime("%Y%m%dT%H%M%S")
+    dirn = os.path.abspath(f"hcov_o_MAR2_calls_{ts}")
+    os.makedirs(dirn, exist_ok=True)
+    _MAR2_call_dir = dirn
+    return dirn
+
+def _save_MAR2_call(hcov: np.ndarray) -> None:
+    """Save one MAR2 hcov_o matrix to disk and update counters/files list."""
+    global _MAR2_call_count, _MAR2_call_files
+    try:
+        d = _ensure_MAR2_dir()
+        fname = os.path.join(d, f"hcov_o_MAR2_{_MAR2_call_count:06d}.npy")
+        np.save(fname, hcov)
+        _MAR2_call_files.append(fname)
+        _MAR2_call_count += 1
+    except Exception as e:
+        logger.warning("Failed to save MAR2 hcov_o call: %s", e)
+
+def get_MAR2_call_count() -> int:
+    """Return number of recorded MAR2 calls in this process run."""
+    return _MAR2_call_count
+
+def get_MAR2_call_files() -> list[str]:
+    """Return list of saved file paths for MAR2 hcov_o outputs."""
+    return list(_MAR2_call_files)
+
+def reset_MAR2_calls(remove_files: bool = False) -> None:
+    """Reset the MAR2 call counter and optionally remove saved files/directory.
+
+    remove_files: if True, attempt to delete saved files and the directory.
+    """
+    global _MAR2_call_count, _MAR2_call_dir, _MAR2_call_files
+    if remove_files and _MAR2_call_files:
+        for f in _MAR2_call_files:
+            try:
+                os.remove(f)
+            except Exception:
+                pass
+        if _MAR2_call_dir:
+            try:
+                os.rmdir(_MAR2_call_dir)
+            except Exception:
+                pass
+    _MAR2_call_count = 0
+    _MAR2_call_dir = None
+    _MAR2_call_files = []
 
 
 #############
@@ -80,6 +141,12 @@ def infer_hcov_o_MAR2( Ros: Sequence[xr.DataArray] , size: int ) -> np.ndarray:#
         hcov_o[b:e,b:e] = MAR2.fit( Ro ).cov(Ro.size)
         b += Ro.size
     
+    # Record the MAR2 hcov_o for later analysis (best-effort)
+    try:
+        _save_MAR2_call(hcov_o)
+    except Exception as e:
+        logger.warning("Could not record MAR2 hcov_o: %s", e)
+
     return hcov_o
 ##}}}
 
