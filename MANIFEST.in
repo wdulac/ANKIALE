@@ -20,3 +20,4 @@ include ANKIALE/data/EXAMPLE/Yo/PARIS_ERA5_TX3x_year_1940-2024.nc
 include ANKIALE/data/EXAMPLE/Yo/SAFRAN_TM08_FRA_1958-2024.nc
 include ANKIALE/data/EXAMPLE/Yo/SAFRAN_TN10n_nyear_1959-2024.nc
 include ANKIALE/data/EXAMPLE/INFOS/MASK_IDF.nc
+include ANKIALE/data/hcov_o_MAR2/hcov_o_MAR2_000000.npy
