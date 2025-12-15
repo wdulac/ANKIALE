@@ -31,6 +31,8 @@ import numpy as np
 import scipy.stats as sc
 import xarray as xr
 
+import os
+
 from typing import Sequence
 
 from .__KCC import KCC
@@ -113,7 +115,11 @@ def _infer_hcov_o( hpar: np.ndarray , hcov: np.ndarray , Xos: Sequence[xr.DataAr
         case 'IND':
             hcov_o = infer_hcov_o_IND( Ros , b )
         case 'MAR2':
-            hcov_o = infer_hcov_o_MAR2( Ros , b )
+            # hcov_o = infer_hcov_o_MAR2( Ros , b )
+            # Load pre-computed hcov_o
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            parent_dir = os.path.dirname(current_dir)
+            hcov_o = np.load(os.path.join(parent_dir, "data", "hcov_o_MAR2", "hcov_o_MAR2_000000.npy"))
         case 'KCC':
             hcov_o = infer_hcov_o_KCC( Ros , b )
         case _:
