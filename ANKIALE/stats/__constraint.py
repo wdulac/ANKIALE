@@ -185,8 +185,11 @@ def constraint_covar( *args: np.ndarray , P: np.ndarray | None = None , timeXo: 
 
 
 
-def constraint_var( hpar: np.ndarray , hcov: np.ndarray , Y: np.ndarray , P: np.ndarray , size_chain: int , cnslaw: AbstractModel , use_STAN: bool , tmp_stan: str | None = None , n_try: int = 5 ) -> np.ndarray:##{{{
+def constraint_var( hpar: np.ndarray , hcov: np.ndarray , Y: np.ndarray , P: np.ndarray , size_chain: int , cnslaw: AbstractModel , use_STAN: bool , stan_seed: int | None = None , tmp_stan: str | None = None , n_try: int = 5 , rng: np.random.Generator | None = None ) -> np.ndarray:##{{{
     
+    # Source of random numbers
+    random = rng if rng else np.random
+
     ## Law
     nslaw   = cnslaw()
     nnshpar = nslaw.nhpar
@@ -203,7 +206,7 @@ def constraint_var( hpar: np.ndarray , hcov: np.ndarray , Y: np.ndarray , P: np.
     chain_is_valid = False
     for _ in range(n_try):
         ## Draw covariate parameters
-        hpars[:] = np.random.multivariate_normal( mean = hpar , cov = hcov , size = 1 ).reshape(-1,1)
+        hpars[:] = random.multivariate_normal( mean = hpar , cov = hcov , size = 1 ).reshape(-1,1)
         
         ## Build the covariable
         X = P @ hpars[:,0]
@@ -215,7 +218,7 @@ def constraint_var( hpar: np.ndarray , hcov: np.ndarray , Y: np.ndarray , P: np.
         
         ## Apply constraint
         try:
-            draw = nslaw.fit_bayesian( iY , iX , prior , size_chain , use_STAN = use_STAN , tmp = tmp_stan , n_try = n_try )
+            draw = nslaw.fit_bayesian( iY , iX , prior , size_chain , use_STAN = use_STAN , stan_seed = stan_seed , tmp = tmp_stan , rng = rng ,  n_try = n_try )
         except StanError:
             continue
         except StanInitError:

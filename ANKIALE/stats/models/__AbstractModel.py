@@ -127,7 +127,10 @@ class AbstractModel:##{{{
         return draw
     ##}}}
     
-    def _fit_bayesian_STAN( self , Y: np.ndarray , X: np.ndarray , prior: PriorType , n_mcmc_drawn: int , tmp: str ) -> np.ndarray:##{{{
+    def _fit_bayesian_STAN( self , Y: np.ndarray , X: np.ndarray , prior: PriorType , n_mcmc_drawn: int , stan_seed: int, tmp: str , rng: np.random.Generator ) -> np.ndarray:##{{{
+        
+        random = rng if rng else np.random
+        
         YY,XX = self._map_stanpar(Y,X)
         show_console = False
         
@@ -151,7 +154,7 @@ class AbstractModel:##{{{
             ninit = 10
             while init_failed:
                 ninit  = 10 * ninit
-                npar   = np.random.normal( loc = 0 , scale = 1 , size = (ninit,len(self.h_name)) )
+                npar   = random.normal( loc = 0 , scale = 1 , size = (ninit,len(self.h_name)) )
                 hpar   = xr.DataArray( (idata["prior_hstd"] @ npar.T).T + idata["prior_hpar"].reshape(1,-1) , dims = ["sample","hpar"] , coords = [range(ninit),list(self.h_name)] )
                 XX     = xr.DataArray( XX , dims = ["time"] , coords = [range(XX.size)] )
                 kwargs = self.draw_params( XX , hpar )
@@ -167,7 +170,7 @@ class AbstractModel:##{{{
             
             ## Fit
             try:
-                fit  = stan_model.sample( data = idata , chains = 1 , iter_sampling = n_mcmc_drawn , output_dir = tmp_draw , parallel_chains = 1 , threads_per_chain = 1 , show_progress = False , show_console = show_console , inits = inits )
+                fit  = stan_model.sample( data = idata , chains = 1 , iter_sampling = n_mcmc_drawn , output_dir = tmp_draw , parallel_chains = 1 , threads_per_chain = 1 , seed = stan_seed , show_progress = False , show_console = show_console , inits = inits)
                 draw = fit.draws_xr("hpar")["hpar"][0,:,:].values
             except Exception:
                 raise StanError
@@ -175,9 +178,9 @@ class AbstractModel:##{{{
         return draw
     ##}}}
     
-    def fit_bayesian( self , Y: np.ndarray , X: np.ndarray , prior: PriorType , n_mcmc_drawn: int , use_STAN: bool , tmp: str , n_try: int = 5 ) -> np.ndarray:##{{{
+    def fit_bayesian( self , Y: np.ndarray , X: np.ndarray , prior: PriorType , n_mcmc_drawn: int , use_STAN: bool , stan_seed: int, tmp: str , rng: np.random.Generator , n_try: int = 5 ) -> np.ndarray:##{{{
         if use_STAN:
-            draw = self._fit_bayesian_STAN( Y , X , prior , n_mcmc_drawn , tmp )
+            draw = self._fit_bayesian_STAN( Y , X , prior , n_mcmc_drawn , stan_seed, tmp , rng )
         else:
             draw = self._fit_bayesian_ORIGIN( Y , X , prior , n_mcmc_drawn , n_try )
         
